@@ -21,18 +21,12 @@ motor = stepper.StepperMotor(
 # Create rotary encoder object
 encoder = rotaryio.IncrementalEncoder(board.D6, board.D7)
 
-# Rotary encoder button setup
-encoder_button = digitalio.DigitalInOut(board.A2)
-encoder_button.direction = digitalio.Direction.INPUT
-encoder_button.pull = digitalio.Pull.UP  # Enable internal pull-up resistor
-
 # DC motor setup
 dc_motor_forward = pwmio.PWMOut(board.D8, frequency=2000)
 dc_motor_backward = pwmio.PWMOut(board.D9, frequency=2000)
 
 # LED setup using PWM
 green_led = pwmio.PWMOut(board.A0, frequency=1000, duty_cycle=0)  # Green LED
-red_led = pwmio.PWMOut(board.A1, frequency=1000, duty_cycle=0)    # Red LED
 
 # Button setup using analog pin as digital GPIO
 goal_button = digitalio.DigitalInOut(board.A3)  # Goal button
@@ -52,18 +46,16 @@ try:
     while True:
         # State: IDLE
         if state == IDLE:
-            red_led.duty_cycle = 0  # Turn off red LED
             green_led.duty_cycle = 0  # Turn off green LED
-            print("Game is idle. Press encoder button to start...")
+            print("Game is idle. Press the goal button to start...")
 
-            # Wait for encoder button press to start the game
-            if not encoder_button.value:  # Button pressed (active low)
+            # Wait for goal button press to start the game
+            if not goal_button.value:  # Button pressed (active low)
                 print("Game starting!")
                 state = PLAYING
 
         # State: PLAYING
         elif state == PLAYING:
-            red_led.duty_cycle = 65535  # Brighten red LED
             green_led.duty_cycle = 0    # Turn off green LED
 
             # Move DC motor left (backward)
@@ -93,7 +85,6 @@ try:
 
         # State: GOAL
         elif state == GOAL:
-            red_led.duty_cycle = 0       # Turn off red LED
             green_led.duty_cycle = 65535  # Brighten green LED
             print("Goal scored! Green LED is ON.")
 
@@ -111,6 +102,5 @@ except KeyboardInterrupt:
     motor.release()
     dc_motor_forward.deinit()
     dc_motor_backward.deinit()
-    red_led.duty_cycle = 0
     green_led.duty_cycle = 0
     print("Game stopped.")
