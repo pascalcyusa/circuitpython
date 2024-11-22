@@ -19,13 +19,13 @@ def stop():  # a stop function which you should always have, NEVER SET BOTH TO T
 
 
 def forward():  # a forward, you can see the direction of the motor and decide your forward and back
-    motor_a.value = True  # sets motor to high or 1
-    motor_b.value = False  # sets motor to low or 0
+    motor_a.value = False  # sets motor to high or 1
+    motor_b.value = True  # sets motor to low or 0
 
 
 def reverse():  # you can even change it to clockwise or counterclockwise
-    motor_a.value = False  # sets motor to low or
-    motor_b.value = True  # sets motor to low
+    motor_a.value = True  # sets motor to low or
+    motor_b.value = False  # sets motor to low
 
 
 while True:  # Main control loop
