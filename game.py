@@ -21,16 +21,19 @@ stepper_motor = stepper.StepperMotor(
 # Create rotary encoder object
 encoder = rotaryio.IncrementalEncoder(board.D6, board.D7)
 
+# Define button pin (using an external pull-up resistor)
+button = digitalio.DigitalInOut(board.A3)
+button.direction = digitalio.Direction.INPUT
+
 # Variables to track encoder position
 last_position = 0
+debounce_delay = 0.05  # 50 ms debounce delay
+last_debounce_time = time.monotonic()  # Initialize debounce timer
 
 # Define DC motor pins
 dc_motor_pin1 = pwmio.PWMOut(board.D8, frequency=5000, duty_cycle=0)
 dc_motor_pin2 = pwmio.PWMOut(board.D9, frequency=5000, duty_cycle=0)
 
-# Define button pin
-button = digitalio.DigitalInOut(board.A3)
-button.direction = digitalio.Direction.INPUT
 
 # Define green LED pin
 green_led = digitalio.DigitalInOut(board.D10)
@@ -43,6 +46,12 @@ GOAL_SCORED = 2
 
 # Initial state
 state = IDLE
+
+# Debounce variables
+button_pressed = False
+last_button_state = button.value
+debounce_delay = 0.05  # 50 ms debounce delay
+last_debounce_time = time.monotonic()  # Initialize debounce timer
 
 
 def control_dc_motor():
@@ -57,9 +66,11 @@ def control_dc_motor():
     dc_motor_pin2.duty_cycle = 0
 
 
-try:
-    while True:
-        # Read the current position of the encoder
+def run_stepper_motor(stepper_motor, encoder, button, game_duration):
+    last_position = encoder.position
+    start_time = time.time()
+
+    while time.time() - start_time < game_duration:
         position = encoder.position
 
         # Check if the encoder position has changed
@@ -67,43 +78,38 @@ try:
             if position > last_position:
                 # Move stepper motor forward
                 stepper_motor.onestep(
-                    direction=stepper.FORWARD, style=stepper.SINGLE)
+                    direction=stepper.FORWARD, style=stepper.SINGLE
+                )
                 print(f"Stepper motor moved forward to position {position}")
             elif position < last_position:
                 # Move stepper motor backward
                 stepper_motor.onestep(
-                    direction=stepper.BACKWARD, style=stepper.SINGLE)
+                    direction=stepper.BACKWARD, style=stepper.SINGLE
+                )
                 print(f"Stepper motor moved backward to position {position}")
 
             # Update the last position
             last_position = position
 
-        # State machine logic
-        if state == IDLE:
-            if not button.value:  # Button pressed
-                state = GAME_PLAY
-                green_led.value = False  # Turn off green LED
-                print("Game started")
+        # Check if the button state has changed
+        if not button.value:  # Button is pressed when value is False
+            print("Goal scored!")
+            break
 
-        elif state == GAME_PLAY:
-            control_dc_motor()
-            if not button.value:  # Button pressed
-                state = GOAL_SCORED
-                green_led.value = True  # Turn on green LED
-                print("Goal scored!")
+        time.sleep(0.01)  # Small delay to prevent high CPU usage
 
-        elif state == GOAL_SCORED:
-            if not button.value:  # Button pressed
-                state = IDLE
-                green_led.value = False  # Turn off green LED
-                print("Game reset")
+    print("Game session ended")
 
-        # Small delay to debounce the button
-        time.sleep(0.5)
+
+try:
+    game_duration = 60  # Set the game duration to 60 seconds
+    while True:
+        control_dc_motor()
+        # Debugging: Print button value
+        print(f"Button state: {button.value}")
+
+        # Run the stepper motor using the encoder
+        run_stepper_motor(stepper_motor, encoder, button, game_duration)
 
 except KeyboardInterrupt:
-    # Release the motors when the script is interrupted
-    stepper_motor.release()
-    dc_motor_pin1.duty_cycle = 0
-    dc_motor_pin2.duty_cycle = 0
-    print("Motors released.")
+    print("Program interrupted")
