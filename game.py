@@ -52,7 +52,7 @@ def control_dc_motor():
     dc_motor_pin2.duty_cycle = 0
 
 
-def run_stepper_motor(stepper_motor, encoder, button, game_duration):
+def run_stepper_motor(stepper_motor, encoder, button, green_led, game_duration):
     last_position = encoder.position
     start_time = time.time()
 
@@ -79,9 +79,8 @@ def run_stepper_motor(stepper_motor, encoder, button, game_duration):
 
         # Check if the button state has changed
         if not button.value:  # Button is pressed when value is False
-            # turn on the green LED
-            green_led.value = True
             print("Goal scored!")
+            green_led.value = True  # Turn on the green LED
             break
 
         time.sleep(0.01)  # Small delay to prevent high CPU usage
@@ -92,12 +91,14 @@ def run_stepper_motor(stepper_motor, encoder, button, game_duration):
 try:
     game_duration = 1
     while True:
+        green_led.value = False  # Turn off the green LED for a new game session
         control_dc_motor()
         # Debugging: Print button value
         print(f"Button state: {button.value}")
 
         # Run the stepper motor using the encoder
-        run_stepper_motor(stepper_motor, encoder, button, game_duration)
+        run_stepper_motor(stepper_motor, encoder, button,
+                          green_led, game_duration)
 
 except KeyboardInterrupt:
     print("Program interrupted")
