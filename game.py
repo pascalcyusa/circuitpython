@@ -25,33 +25,19 @@ encoder = rotaryio.IncrementalEncoder(board.D6, board.D7)
 button = digitalio.DigitalInOut(board.A3)
 button.direction = digitalio.Direction.INPUT
 
-# Variables to track encoder position
-last_position = 0
-debounce_delay = 0.05  # 50 ms debounce delay
-last_debounce_time = time.monotonic()  # Initialize debounce timer
-
-# Define DC motor pins
-dc_motor_pin1 = pwmio.PWMOut(board.D8, frequency=5000, duty_cycle=0)
-dc_motor_pin2 = pwmio.PWMOut(board.D9, frequency=5000, duty_cycle=0)
-
-
 # Define green LED pin
-green_led = digitalio.DigitalInOut(board.D10)
+green_led = digitalio.DigitalInOut(board.A0)
 green_led.direction = digitalio.Direction.OUTPUT
-
-# State machine states
-IDLE = 0
-GAME_PLAY = 1
-GOAL_SCORED = 2
-
-# Initial state
-state = IDLE
 
 # Debounce variables
 button_pressed = False
 last_button_state = button.value
 debounce_delay = 0.05  # 50 ms debounce delay
 last_debounce_time = time.monotonic()  # Initialize debounce timer
+
+# Define DC motor pins
+dc_motor_pin1 = pwmio.PWMOut(board.D8, frequency=5000, duty_cycle=0)
+dc_motor_pin2 = pwmio.PWMOut(board.D9, frequency=5000, duty_cycle=0)
 
 
 def control_dc_motor():
@@ -93,6 +79,8 @@ def run_stepper_motor(stepper_motor, encoder, button, game_duration):
 
         # Check if the button state has changed
         if not button.value:  # Button is pressed when value is False
+            # turn on the green LED
+            green_led.value = True
             print("Goal scored!")
             break
 
@@ -102,7 +90,7 @@ def run_stepper_motor(stepper_motor, encoder, button, game_duration):
 
 
 try:
-    game_duration = 60  # Set the game duration to 60 seconds
+    game_duration = 1
     while True:
         control_dc_motor()
         # Debugging: Print button value
