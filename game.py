@@ -29,15 +29,18 @@ button.direction = digitalio.Direction.INPUT
 green_led = digitalio.DigitalInOut(board.A0)
 green_led.direction = digitalio.Direction.OUTPUT
 
-# Debounce variables
-button_pressed = False
-last_button_state = button.value
-debounce_delay = 0.05  # 50 ms debounce delay
-last_debounce_time = time.monotonic()  # Initialize debounce timer
-
 # Define DC motor pins
 dc_motor_pin1 = pwmio.PWMOut(board.D8, frequency=5000, duty_cycle=0)
 dc_motor_pin2 = pwmio.PWMOut(board.D9, frequency=5000, duty_cycle=0)
+
+# Define states
+INIT = 0
+RUN_DC_MOTOR = 1
+RUN_STEPPER_MOTOR = 2
+GOAL_SCORED = 3
+
+# Initial state
+state = INIT
 
 
 def control_dc_motor():
@@ -81,24 +84,33 @@ def run_stepper_motor(stepper_motor, encoder, button, green_led, game_duration):
         if not button.value:  # Button is pressed when value is False
             print("Goal scored!")
             green_led.value = True  # Turn on the green LED
-            break
+            return GOAL_SCORED
 
         time.sleep(0.01)  # Small delay to prevent high CPU usage
 
     print("Game session ended")
+    return INIT
 
 
 try:
     game_duration = 1
     while True:
-        green_led.value = False  # Turn off the green LED for a new game session
-        control_dc_motor()
-        # Debugging: Print button value
-        print(f"Button state: {button.value}")
+        if state == INIT:
+            green_led.value = False  # Turn off the green LED for a new game session
+            state = RUN_DC_MOTOR
 
-        # Run the stepper motor using the encoder
-        run_stepper_motor(stepper_motor, encoder, button,
-                          green_led, game_duration)
+        elif state == RUN_DC_MOTOR:
+            control_dc_motor()
+            state = RUN_STEPPER_MOTOR
+
+        elif state == RUN_STEPPER_MOTOR:
+            state = run_stepper_motor(
+                stepper_motor, encoder, button, green_led, game_duration)
+
+        elif state == GOAL_SCORED:
+            # Wait for a short period before starting a new game session
+            time.sleep(2)
+            state = INIT
 
 except KeyboardInterrupt:
     print("Program interrupted")
