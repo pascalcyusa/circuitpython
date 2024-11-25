@@ -44,13 +44,13 @@ state = INIT
 
 
 def control_dc_motor():
-    # Move DC motor clockwise and counter-clockwise
+    # Move DC motor clockwise and counter-clockwise with reduced distance
     dc_motor_pin1.duty_cycle = 0
-    dc_motor_pin2.duty_cycle = 32767  # Half duty cycle for counter-clockwise
-    time.sleep(0.5)
-    dc_motor_pin1.duty_cycle = 32767  # Half duty cycle for clockwise
+    dc_motor_pin2.duty_cycle = 16384  # Quarter duty cycle for counter-clockwise
+    time.sleep(0.25)
+    dc_motor_pin1.duty_cycle = 16384  # Quarter duty cycle for clockwise
     dc_motor_pin2.duty_cycle = 0
-    time.sleep(0.5)
+    time.sleep(0.25)
     dc_motor_pin1.duty_cycle = 0
     dc_motor_pin2.duty_cycle = 0
 
